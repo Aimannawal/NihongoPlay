@@ -1,104 +1,87 @@
-<!-- resources/views/vocabularies/category.blade.php -->
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <h1 class="text-center my-4">Kategori: {{ ucfirst($category) }}</h1>
-    
-    <div class="mb-4">
-        <a href="{{ route('vocabularies.index') }}" class="btn btn-secondary">Kembali ke Kategori</a>
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-primary text-white py-3 px-6 rounded-lg shadow-md mb-6">
+        <h1 class="text-2xl font-bold text-center">Kategori: {{ ucfirst($category) }}</h1>
     </div>
     
-    <div class="row">
+    <div class="mb-6">
+        <a href="{{ route('vocabularies.index') }}" class="inline-flex items-center bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Kembali
+        </a>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         @if($vocabularies->count() > 0)
             @foreach($vocabularies as $vocabulary)
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
+                <div class="p-6">
                     @if($vocabulary->card_image)
-                    <img src="{{ asset('storage/'.$vocabulary->card_image) }}" class="card-img-top" alt="{{ $vocabulary->meaning }}">
+                    <div class="mb-4 flex justify-center">
+                        <img src="{{ asset('storage/'.$vocabulary->card_image) }}" class="h-32 object-contain rounded-lg" alt="{{ $vocabulary->meaning }}">
+                    </div>
                     @endif
-                    <div class="card-body">
-                        <h3 class="card-title">{{ $vocabulary->japanese_word }}</h3>
-                        <p class="card-text">{{ $vocabulary->romaji }}</p>
-                        <p class="card-text"><strong>Arti:</strong> {{ $vocabulary->meaning }}</p>
-                        <button class="btn btn-primary play-audio" data-audio="{{ asset('storage/'.$vocabulary->audio_path) }}">
-                            <i class="bi bi-volume-up"></i> Putar Suara
-                        </button>
-                    </div>
-                    <div class="card-footer text-center">
-                        <img src="{{ route('vocabularies.barcode', $vocabulary->id) }}" alt="Barcode" class="img-fluid" style="max-height: 100px;">
-                    </div>
+                    
+                    <h3 class="text-xl font-bold text-primary text-center mb-2">{{ $vocabulary->japanese_word }}</h3>
+                    <p class="text-gray-700 text-center mb-1">{{ $vocabulary->romaji }}</p>
+                    <p class="font-medium text-center mb-4">{{ $vocabulary->meaning }}</p>
+                    
+                    <button class="w-full bg-accent hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 play-audio" 
+                            data-audio="{{ asset('storage/'.$vocabulary->audio_path) }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        </svg>
+                        Putar Suara
+                    </button>
+                </div>
+                <div class="bg-gray-100 p-4 flex justify-center">
+                    {!! QrCode::size(100)->generate($vocabulary->barcode_data) !!}
                 </div>
             </div>
             @endforeach
         @else
-            <div class="col-12">
-                <div class="alert alert-info">
-                    Belum ada kosakata untuk kategori ini. <a href="{{ route('vocabularies.create') }}">Tambahkan sekarang!</a>
+            <div class="col-span-full">
+                <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded">
+                    <p>Belum ada kosakata untuk kategori ini. <a href="{{ route('vocabularies.create') }}" class="underline font-bold">Tambahkan sekarang!</a></p>
                 </div>
             </div>
         @endif
     </div>
-    
-    <div class="mt-5">
-        <h3>Scan Barcode</h3>
-        <div class="row">
-            <div class="col-md-6">
-                <div id="reader" style="width: 100%;"></div>
-                <button id="rescan" class="btn btn-secondary mt-3 d-none">Scan Ulang</button>
-            </div>
-            <div class="col-md-6">
-                <div id="result" class="mt-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h4 id="japanese-word" class="mb-2"></h4>
-                            <p id="romaji" class="mb-1"></p>
-                            <p id="meaning" class="mb-3"></p>
-                            <button id="play-audio" class="btn btn-primary d-none">Putar Suara</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize HTML5 QR Code Scanner
         const html5QrCode = new Html5Qrcode("reader");
         const qrConfig = { fps: 10, qrbox: 250 };
         let sound = null;
         let scannerStarted = false;
 
-        // Start scanner
         function startScanner() {
             html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess, onScanFailure)
                 .then(() => {
                     scannerStarted = true;
-                    document.getElementById('rescan').classList.add('d-none');
+                    document.getElementById('rescan').classList.add('hidden');
                 })
                 .catch(err => {
                     console.error('Failed to start scanner', err);
                 });
         }
 
-        // Start scanner when page loads
         startScanner();
 
-        // Success callback when QR code is scanned
         function onScanSuccess(decodedText) {
-            // Stop scanning
             html5QrCode.stop().then(() => {
                 scannerStarted = false;
-                document.getElementById('rescan').classList.remove('d-none');
+                document.getElementById('rescan').classList.remove('hidden');
             });
             
-            // Send the barcode data to the server
+            document.getElementById('scan-placeholder').classList.add('hidden');
+            document.getElementById('scan-result').classList.remove('hidden');
+            
             fetch('{{ route('vocabularies.scan') }}', {
                 method: 'POST',
                 headers: {
@@ -110,25 +93,21 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Display the vocabulary information
                     document.getElementById('japanese-word').textContent = data.data.japanese_word;
                     document.getElementById('romaji').textContent = data.data.romaji;
                     document.getElementById('meaning').textContent = data.data.meaning;
                     
-                    // Setup audio
                     sound = new Howl({
                         src: [data.audio_url],
                         html5: true
                     });
                     
-                    // Show play button
                     const playButton = document.getElementById('play-audio');
-                    playButton.classList.remove('d-none');
+                    playButton.classList.remove('hidden');
                     playButton.addEventListener('click', function() {
                         sound.play();
                     });
                     
-                    // Auto play the audio
                     sound.play();
                 } else {
                     alert(data.message);
@@ -139,18 +118,17 @@
             });
         }
 
-        // Error callback
         function onScanFailure(error) {
-            // Handle scan failure, usually no QR in sight
             console.log('Scan error: ', error);
         }
 
-        // Re-scan button
         document.getElementById('rescan').addEventListener('click', function() {
+            document.getElementById('scan-placeholder').classList.remove('hidden');
+            document.getElementById('scan-result').classList.add('hidden');
             document.getElementById('japanese-word').textContent = '';
             document.getElementById('romaji').textContent = '';
             document.getElementById('meaning').textContent = '';
-            document.getElementById('play-audio').classList.add('d-none');
+            document.getElementById('play-audio').classList.add('hidden');
             
             if (sound) {
                 sound.unload();
@@ -162,21 +140,19 @@
             }
         });
 
-        // Play audio buttons for vocabulary cards
         document.querySelectorAll('.play-audio').forEach(button => {
             button.addEventListener('click', function() {
                 const audioUrl = this.getAttribute('data-audio');
                 
-                // Create new Howl instance
                 const cardSound = new Howl({
                     src: [audioUrl],
                     html5: true
                 });
                 
-                // Play the sound
                 cardSound.play();
             });
         });
     });
 </script>
 @endsection
+

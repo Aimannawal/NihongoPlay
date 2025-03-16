@@ -27,3 +27,5 @@ Route::post('/vocabulary', [VocabularyController::class, 'store'])->name('vocabu
 Route::get('/barcode/{id}', [VocabularyController::class, 'getBarcode'])->name('vocabularies.barcode');
 Route::post('/scan', [VocabularyController::class, 'scanBarcode'])->name('vocabularies.scan');
 Route::get('/cards', [VocabularyController::class, 'generateCards'])->name('vocabularies.cards');
+Route::get('/quiz', [VocabularyController::class, 'quiz'])->name('vocabularies.quiz');
+Route::post('/quiz/questions', [VocabularyController::class, 'getQuizQuestions'])->name('vocabularies.getQuizQuestions');

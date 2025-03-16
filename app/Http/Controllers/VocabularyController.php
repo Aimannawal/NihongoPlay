@@ -42,12 +42,12 @@ class VocabularyController extends Controller
 
         // Store audio file correctly
         $audioFile = $request->file('audio_file');
-        $audioPath = $audioFile->store('public/audio'); // Simpan di storage/app/public/audio
+        $audioPath = $audioFile->store('audio'); // Simpan di storage/app/audio
 
         // Store card image if provided
         $cardImagePath = null;
         if ($request->hasFile('card_image')) {
-            $cardImagePath = $request->file('card_image')->store('public/cards'); // Simpan di storage/app/public/cards
+            $cardImagePath = $request->file('card_image')->store('cards'); // Simpan di storage/app/cards
         }
 
         // Simpan ke database
@@ -56,8 +56,8 @@ class VocabularyController extends Controller
             'romaji' => $validated['romaji'],
             'meaning' => $validated['meaning'],
             'category' => $validated['category'],
-            'audio_path' => str_replace('public/', '', $audioPath), // Hapus 'public/' agar bisa diakses dengan asset()
-            'card_image' => $cardImagePath ? str_replace('public/', '', $cardImagePath) : null,
+            'audio_path' => $audioPath, // Tidak ada 'public/' di depan
+            'card_image' => $cardImagePath,
             'barcode_data' => $barcodeData,
         ]);
 
@@ -84,11 +84,11 @@ class VocabularyController extends Controller
         }
 
         // Pastikan file audio ada
-        if (!Storage::exists('public/' . $vocabulary->audio_path)) {
+        if (!Storage::exists($vocabulary->audio_path)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Audio file tidak ditemukan!',
-                'path' => 'public/' . $vocabulary->audio_path
+                'path' => $vocabulary->audio_path
             ]);
         }
 
@@ -105,12 +105,133 @@ class VocabularyController extends Controller
         return view('vocabularies.cards', compact('vocabularies'));
     }
 
-    public function debugStorage()
+    public function quiz()
     {
-        $audioFiles = Storage::files('public/audio');
-        $cardFiles = Storage::files('public/cards');
-        $publicLink = file_exists(public_path('storage')) ? 'Exists' : 'Does not exist';
+        $categories = Vocabulary::select('category')->distinct()->pluck('category');
+        return view('vocabularies.quiz', compact('categories'));
+    }
 
-        return view('debug.storage', compact('audioFiles', 'cardFiles', 'publicLink'));
+    public function getQuizQuestions(Request $request)
+    {
+        $quizType = $request->input('quiz_type');
+        $categories = $request->input('categories', []);
+        $count = $request->input('count', 10);
+        
+        // Validate input
+        if (empty($categories)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pilih minimal satu kategori!'
+            ]);
+        }
+        
+        // Get vocabularies from selected categories
+        $vocabularies = Vocabulary::whereIn('category', $categories)->inRandomOrder()->take($count)->get();
+        
+        if ($vocabularies->count() < $count) {
+            $count = $vocabularies->count();
+        }
+        
+        if ($vocabularies->count() === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada kosakata untuk kategori yang dipilih!'
+            ]);
+        }
+        
+        $questions = [];
+        
+        switch ($quizType) {
+            case 'multiple-choice':
+                foreach ($vocabularies as $vocabulary) {
+                    $wrongOptions = Vocabulary::where('id', '!=', $vocabulary->id)
+                                            ->whereIn('category', $categories)
+                                            ->inRandomOrder()
+                                            ->take(3)
+                                            ->pluck('meaning')
+                                            ->toArray();
+                    
+                    while (count($wrongOptions) < 3) {
+                        $wrongOptions[] = 'Opsi ' . mt_rand(1, 100);
+                    }
+
+                    $options = array_merge([$vocabulary->meaning], $wrongOptions);
+                    shuffle($options);
+                    $correctOption = array_search($vocabulary->meaning, $options);
+                    
+                    $questions[] = [
+                        'japanese_word' => $vocabulary->japanese_word,
+                        'romaji' => $vocabulary->romaji,
+                        'meaning' => $vocabulary->meaning,
+                        'options' => $options,
+                        'correct_option' => $correctOption
+                    ];
+                }
+                break;
+                
+            case 'matching':
+                $pairs = [];
+                foreach ($vocabularies as $vocabulary) {
+                    $pairs[] = [
+                        'japanese_word' => $vocabulary->japanese_word,
+                        'romaji' => $vocabulary->romaji,
+                        'meaning' => $vocabulary->meaning
+                    ];
+                }
+                
+                $questions[] = [
+                    'pairs' => $pairs
+                ];
+                break;
+                
+            case 'listening':
+                foreach ($vocabularies as $vocabulary) {
+                    $wrongOptions = Vocabulary::where('id', '!=', $vocabulary->id)
+                                            ->whereIn('category', $categories)
+                                            ->inRandomOrder()
+                                            ->take(3)
+                                            ->pluck('japanese_word')
+                                            ->toArray();
+                    
+                    while (count($wrongOptions) < 3) {
+                        $wrongOptions[] = 'オプション' . mt_rand(1, 100);
+                    }
+                    
+                    $options = array_merge([$vocabulary->japanese_word], $wrongOptions);
+                    shuffle($options);
+                    $correctOption = array_search($vocabulary->japanese_word, $options);
+                    
+                    $questions[] = [
+                        'japanese_word' => $vocabulary->japanese_word,
+                        'romaji' => $vocabulary->romaji,
+                        'meaning' => $vocabulary->meaning,
+                        'audio_url' => asset('storage/' . $vocabulary->audio_path),
+                        'options' => $options,
+                        'correct_option' => $correctOption
+                    ];
+                }
+                break;
+                
+            case 'writing':
+                foreach ($vocabularies as $vocabulary) {
+                    $questions[] = [
+                        'japanese_word' => $vocabulary->japanese_word,
+                        'romaji' => $vocabulary->romaji,
+                        'meaning' => $vocabulary->meaning
+                    ];
+                }
+                break;
+                
+            default:
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tipe quiz tidak valid!'
+                ]);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'questions' => $questions
+        ]);
     }
 }

@@ -1,107 +1,125 @@
-{{-- <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-
-        <title>{{ config('app.name', 'Laravel') }}</title>
-
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
-
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
-
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
-        </div>
-    </body>
-</html> --}}
-<!-- resources/views/layouts/app.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NihongoPlay - Belajar Bahasa Jepang</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Poppins Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- HTML5 QR Code Scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <!-- Howler.js for Audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'poppins': ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#10b981', 
+                        'primary-dark': '#059669',
+                        'primary-light': '#34d399', 
+                        'secondary': '#4ade80', 
+                        'accent': '#f59e0b', 
+                        'dark': '#1f2937', 
+                        'light': '#f9fafb', 
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
         body {
-            background-color: #f8f9fa;
+            font-family: 'Poppins', sans-serif;
         }
-        .navbar-brand {
-            font-weight: bold;
-        }
-        footer {
-            margin-top: 40px;
-            padding: 20px 0;
-            text-align: center;
-            background-color: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-        }
-        .card {
-            margin-bottom: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .btn-primary {
-            background-color: #6c5ce7;
-            border-color: #6c5ce7;
-        }
-        .btn-primary:hover {
-            background-color: #5d4fd6;
-            border-color: #5d4fd6;
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .card-printable, .card-printable * {
+                visibility: visible;
+            }
+            .card-printable {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+            }
         }
     </style>
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="{{ route('vocabularies.index') }}">NihongoPlay</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('vocabularies.index') }}">Beranda</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('vocabularies.cards') }}">Kartu</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('vocabularies.create') }}">Tambah Kosakata</a>
-                    </li>
-                </ul>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <nav class="bg-primary shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{{ route('vocabularies.index') }}" class="flex-shrink-0 flex items-center">
+                        <img class="h-20 w-auto" src="{{ asset('logo.png') }}" alt="NihongoPlay">
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex md:items-center md:space-x-4">
+                    <a href="{{ route('vocabularies.index') }}" class="px-3 py-2 rounded-md text-white font-medium hover:bg-primary-dark transition duration-150">Beranda</a>
+                    <a href="{{ route('vocabularies.cards') }}" class="px-3 py-2 rounded-md text-white font-medium hover:bg-primary-dark transition duration-150">Kartu</a>
+                    <a href="{{ route('vocabularies.create') }}" class="px-3 py-2 rounded-md text-white font-medium hover:bg-primary-dark transition duration-150">Tambah Kosakata</a>
+                    <a href="{{ route('vocabularies.quiz') }}" class="px-3 py-2 rounded-md text-white font-medium hover:bg-primary-dark transition duration-150">Quiz</a>
+                </div>
+                
+                <div class="flex md:hidden items-center">
+                    <button type="button" class="mobile-menu-button text-white hover:text-gray-200 focus:outline-none">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mobile-menu hidden md:hidden bg-primary-dark">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="{{ route('vocabularies.index') }}" class="block px-3 py-2 rounded-md text-white font-medium hover:bg-primary transition duration-150">Beranda</a>
+                <a href="{{ route('vocabularies.cards') }}" class="block px-3 py-2 rounded-md text-white font-medium hover:bg-primary transition duration-150">Kartu</a>
+                <a href="{{ route('vocabularies.create') }}" class="block px-3 py-2 rounded-md text-white font-medium hover:bg-primary transition duration-150">Tambah Kosakata</a>
             </div>
         </div>
     </nav>
 
-    @yield('content')
+    <main class="flex-grow">
+        @yield('content')
+    </main>
 
-    <footer>
-        <div class="container">
+    <footer class="bg-dark text-white py-6 mt-8">
+        <div class="container mx-auto px-4 text-center">
             <p>&copy; {{ date('Y') }} NihongoPlay - Aplikasi Belajar Bahasa Jepang</p>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.querySelector('.mobile-menu-button');
+            const mobileMenu = document.querySelector('.mobile-menu');
+            
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

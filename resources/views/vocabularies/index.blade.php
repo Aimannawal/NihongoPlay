@@ -63,6 +63,9 @@
                             <p>Scan kartu untuk melihat kosakata</p>
                         </div>
                         <div id="scan-result" class="w-full hidden">
+                            <div class="mb-4 flex justify-center">
+                                <img id="card-image" src="" class="h-32 object-contain rounded-lg" alt="">
+                            </div>
                             <h4 id="japanese-word" class="text-2xl font-bold text-primary mb-2 text-center"></h4>
                             <p id="romaji" class="text-lg text-center mb-1"></p>
                             <p id="meaning" class="text-lg font-medium text-center mb-4"></p>
@@ -104,6 +107,8 @@
                     document.getElementById('scan-placeholder').classList.add('hidden');
                     document.getElementById('scan-result').classList.remove('hidden');
                     
+                    document.getElementById('card-image').src = "{{ asset('storage/') }}/" + data.data.card_image;
+                    document.getElementById('card-image').alt = data.data.meaning;
                     document.getElementById('japanese-word').textContent = data.data.japanese_word;
                     document.getElementById('romaji').textContent = data.data.romaji;
                     document.getElementById('meaning').textContent = data.data.meaning;
